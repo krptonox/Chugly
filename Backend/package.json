@@ -1,0 +1,26 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "ironpass": "^0.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mailgen": "^2.0.36",
+    "mongoose": "^9.9.1",
+    "nodemailer": "^9.0.5",
+    "nodemon": "^3.1.14",
+    "zod": "^4.4.3"
+  }
+}
