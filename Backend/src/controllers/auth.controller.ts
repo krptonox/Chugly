@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import crypto from "crypto";
-import { User } from "../models/user.model.ts";
-import { ApiResponse } from "../utils/api-response.ts";
-import { ApiError } from "../utils/api-error.ts";
-import { asyncHandler } from "../utils/async-handler.ts";
+import { User } from "../models/user.model.js";
+import { ApiResponse } from "../utils/api-response.js";
+import { ApiError } from "../utils/api-error.js";
+import { asyncHandler } from "../utils/async-handler.js";
 import { sendMail, emailVerficationMailgenContent } from "../utils/mail.js";
 import { Types } from "mongoose";
 

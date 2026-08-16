@@ -1,13 +1,21 @@
 import { Router } from "express";
 
 import { registerUser } from "../controllers/auth.controller.js";
-import { userRegisterValidator } from '../validators/index.ts';
-import { verifyEmail } from '../controllers/auth.controller.ts';
-import { validate } from "../middleware/validator.middleware.ts";
-import { login } from "../controllers/auth.controller.ts";
-import { userLoginValidator } from '../validators/index.ts';
-import { verifyJWT } from "../middleware/auth.middleware.ts";
-import { logoutUser } from "../controllers/auth.controller.ts";
+import {
+    userRegisterValidator,
+    userLoginValidator,
+} from "../validators/index.js";
+
+import {
+    verifyEmail,
+    login,
+    logoutUser,
+} from "../controllers/auth.controller.js";
+
+import { validate } from "../middleware/validator.middleware.js";
+
+import { verifyJWT } from "../middleware/auth.middleware.js";
+
 
 const router = Router();
 
