@@ -1,7 +1,8 @@
 import { Router } from "express";
 
 import { registerUser } from "../controllers/auth.controller.js";
-
+import { userRegisterValidator } from '../validators/index.ts';
+import { validate } from "../middleware/validator.middleware.ts";
 
 const router = Router();
 
@@ -9,6 +10,8 @@ const router = Router();
 router
     .route("/register")
     .post(
+        userRegisterValidator(),
+        validate,
         registerUser
     );
 

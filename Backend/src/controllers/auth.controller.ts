@@ -5,6 +5,60 @@ import { ApiResponse } from "../utils/api-response.ts";
 import { ApiError } from "../utils/api-error.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 
+
+//generate access token and refresh token for the user
+
+import mongoose from "mongoose";
+
+const generateAccessAndRefreshToken = async (
+    userId: mongoose.Types.ObjectId
+): Promise<{
+    accessToken: string;
+    refreshToken: string;
+}> => {
+    try {
+        const user = await User.findById(userId);
+
+        if (!user) {
+            throw new ApiError(
+                404,
+                "User not found"
+            );
+        }
+
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
+
+        user.refreshToken = refreshToken;
+
+        await user.save({
+            validateBeforeSave: false,
+        });
+
+        return {
+            accessToken,
+            refreshToken,
+        };
+    } catch (error: unknown) {
+        if (error instanceof ApiError) {
+            throw error;
+        }
+
+        throw new ApiError(
+            500,
+            "Error generating tokens",
+            [
+                error instanceof Error
+                    ? error.message
+                    : "Unknown error",
+            ],
+            error instanceof Error
+                ? error.stack
+                : ""
+        );
+    }
+};
+
 const registerUser = asyncHandler(
     async (req: Request, res: Response) => {
         const {
@@ -37,7 +91,7 @@ const registerUser = asyncHandler(
         const createdUser = await User.findById(
             user._id
         ).select(
-            "-refreshToken -emailVerificationToken -emailVerificationTokenExpiry -forgotPasswordToken -forgotPasswordTokenExpiry"
+            "-emailVerificationToken -emailVerificationTokenExpiry -forgotPasswordToken -forgotPasswordTokenExpiry"
         );
 
         if (!createdUser) {
