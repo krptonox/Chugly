@@ -55,12 +55,10 @@ const userSchema = new Schema<IUser>(
             type: {
                 url: {
                     type: String,
-                    required: true,
                 },
 
                 localPath: {
                     type: String,
-                    required: true,
                 },
             },
 
