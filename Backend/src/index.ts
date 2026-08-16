@@ -1,14 +1,7 @@
-// @ts-ignore
-import express, { Request, Response } from "express";
+import app from "./app";
 
-const app = express();
-
-const PORT: number = 3000;
-
-app.get("/", (req: Request, res: Response) => {
-  res.send("Chugly Backend is running!");
-});
+const PORT = 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port http://localhost:${PORT}`);
+  console.log(`Chugly Backend is running on http://localhost:${PORT}`);
 });
