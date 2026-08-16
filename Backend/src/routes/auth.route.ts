@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { registerUser, resendEmailVerification } from "../controllers/auth.controller.js";
+import { refreshAccessToken, registerUser, resendEmailVerification } from "../controllers/auth.controller.js";
 import {
     userRegisterValidator,
     userLoginValidator,
@@ -29,6 +29,8 @@ router.route('/verify-email/:verificationToken').post(verifyEmail);
 
 
 router.route('/login').post(userLoginValidator(), validate, login);
+
+router.route('/refresh-access-token').post(refreshAccessToken)
 
 
 

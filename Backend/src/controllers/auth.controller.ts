@@ -472,4 +472,108 @@ const changeCurrentPassword = asyncHandler(
     }
 );
 
-export { registerUser, verifyEmail, login, logoutUser, resendEmailVerification, getCurrentUser, changeCurrentPassword };
+
+import jwt, { JwtPayload } from "jsonwebtoken";
+
+interface RefreshTokenPayload extends JwtPayload {
+    _id: string;
+}
+
+const refreshAccessToken = asyncHandler(
+    async (req, res) => {
+
+        const incomingRefreshToken =
+            req.cookies?.refreshToken ||
+            req.body?.refreshToken;
+
+        if (!incomingRefreshToken) {
+            throw new ApiError(
+                400,
+                "Refresh token is required"
+            );
+        }
+
+        const refreshTokenSecret =
+            process.env.REFRESH_TOKEN_SECRET;
+
+        if (!refreshTokenSecret) {
+            throw new ApiError(
+                500,
+                "Refresh token secret is not configured"
+            );
+        }
+
+        try {
+            const decodedToken = jwt.verify(
+                incomingRefreshToken,
+                refreshTokenSecret
+            ) as RefreshTokenPayload;
+
+            const user = await User.findById(
+                decodedToken._id
+            );
+
+            if (!user) {
+                throw new ApiError(
+                    404,
+                    "User not found"
+                );
+            }
+
+            if (
+                incomingRefreshToken !==
+                user.refreshToken
+            ) {
+                throw new ApiError(
+                    401,
+                    "Refresh token is expired or invalid"
+                );
+            }
+
+            const {
+                accessToken,
+                refreshToken,
+            } = await generateAccessAndRefreshToken(
+                user._id
+            );
+
+            const options = {
+                httpOnly: true,
+                secure: true,
+            };
+
+            return res
+                .status(200)
+                .cookie(
+                    "refreshToken",
+                    refreshToken,
+                    options
+                )
+                .cookie(
+                    "accessToken",
+                    accessToken,
+                    options
+                )
+                .json(
+                    new ApiResponse(
+                        200,
+                        {},
+                        "Access token refreshed successfully"
+                    )
+                );
+
+        } catch (error) {
+
+            if (error instanceof ApiError) {
+                throw error;
+            }
+
+            throw new ApiError(
+                401,
+                "Invalid refresh token"
+            );
+        }
+    }
+);
+
+export { registerUser, verifyEmail, login, logoutUser, resendEmailVerification, getCurrentUser, changeCurrentPassword, refreshAccessToken };
