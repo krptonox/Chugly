@@ -51,4 +51,28 @@ const userLoginValidator = (): ValidationChain[] => {
 };
 
 
-export { userRegisterValidator,userLoginValidator };
+
+const userForgotPasswordValidator = (): ValidationChain[] => {
+    return [
+        body("email")
+            .trim()
+            .notEmpty()
+            .withMessage("Email is required")
+            .isEmail()
+            .withMessage(
+                "Please provide a valid email address"
+            ),
+    ];
+};
+
+const userResetForgotPasswordValidator = (): ValidationChain[] => {
+    return [
+        body("newPassword")
+            .notEmpty()
+            .withMessage("New password is required"),
+    ];
+};
+
+
+
+export { userRegisterValidator,userLoginValidator, userForgotPasswordValidator, userResetForgotPasswordValidator };

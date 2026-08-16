@@ -20,6 +20,10 @@ import { getCurrentUser } from "../controllers/auth.controller.js";
 
 import { changeCurrentPassword } from "../controllers/auth.controller.js";
 
+import { forgotPassword, resetForgotPassword } from "../controllers/auth.controller.js";
+
+import { userForgotPasswordValidator, userResetForgotPasswordValidator } from "../validators/index.js";
+
 const router = Router();
 
 // Unsecured routes
@@ -31,6 +35,11 @@ router.route('/verify-email/:verificationToken').post(verifyEmail);
 router.route('/login').post(userLoginValidator(), validate, login);
 
 router.route('/refresh-access-token').post(refreshAccessToken)
+
+router.route('/forgot-password').post(userForgotPasswordValidator(), validate, forgotPassword);
+
+router.route('/reset-forgot-password/:resetToken').post(userResetForgotPasswordValidator(), validate, resetForgotPassword);
+
 
 
 
