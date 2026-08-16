@@ -1,6 +1,7 @@
 declare module "ironpass" {
     export function hash(
-        password: string
+        password: string,
+        options?: unknown
     ): Promise<string>;
 
     export function verifyPassword(

@@ -26,7 +26,7 @@ interface ITemporaryToken {
     TokenExpiry: Date;
 }
 
-interface IUser extends Document {
+export interface IUser extends Document {
     avatar: IAvatar;
 
     username: string;
@@ -260,5 +260,22 @@ userSchema.methods.generateTemporaryToken =
             TokenExpiry,
         };
     };
+
+
+
+// --------------------------------------------------
+// check if password is correct
+// --------------------------------------------------
+
+
+
+userSchema.methods.isPasswordCorrect = async function (
+    password: string
+): Promise<boolean> {
+    return await verifyPassword(
+        password,
+        this.password
+    );
+};
 
 export const User =  mongoose.model<IUser>("User", userSchema);

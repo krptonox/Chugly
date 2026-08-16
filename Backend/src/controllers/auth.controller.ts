@@ -5,14 +5,14 @@ import { ApiResponse } from "../utils/api-response.ts";
 import { ApiError } from "../utils/api-error.ts";
 import { asyncHandler } from "../utils/async-handler.ts";
 import { sendMail, emailVerficationMailgenContent } from "../utils/mail.js";
-
+import { Types } from "mongoose";
 
 //generate access token and refresh token for the user
 
 import mongoose from "mongoose";
 
 const generateAccessAndRefreshToken = async (
-    userId: mongoose.Types.ObjectId
+    userId: Types.ObjectId
 ): Promise<{
     accessToken: string;
     refreshToken: string;
@@ -21,10 +21,7 @@ const generateAccessAndRefreshToken = async (
         const user = await User.findById(userId);
 
         if (!user) {
-            throw new ApiError(
-                404,
-                "User not found"
-            );
+            throw new ApiError(404, "User not found");
         }
 
         const accessToken = user.generateAccessToken();
@@ -41,10 +38,6 @@ const generateAccessAndRefreshToken = async (
             refreshToken,
         };
     } catch (error: unknown) {
-        if (error instanceof ApiError) {
-            throw error;
-        }
-
         throw new ApiError(
             500,
             "Error generating tokens",
@@ -59,6 +52,7 @@ const generateAccessAndRefreshToken = async (
         );
     }
 };
+
 
 const registerUser = asyncHandler(
     async (req: Request, res: Response) => {
@@ -208,4 +202,113 @@ const verifyEmail = asyncHandler(
 );
 
 
-export { registerUser, verifyEmail };
+
+
+const login = asyncHandler(
+    async (req: Request, res: Response) => {
+
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            throw new ApiError(
+                400,
+                "Email and password are required"
+            );
+        }
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            throw new ApiError(
+                404,
+                "User not found"
+            );
+        }
+
+        const isPasswordValid =
+            await user.isPasswordCorrect(password);
+
+        if (!isPasswordValid) {
+            throw new ApiError(
+                401,
+                "Invalid credentials"
+            );
+        }
+
+        const {
+    accessToken,
+    refreshToken,
+} = await generateAccessAndRefreshToken(
+    user._id
+);
+
+        const loggedInUser =
+            await User.findById(user._id).select(
+                "-password -refreshToken -emailVerificationToken -emailVerificationTokenExpiry -forgotPasswordToken -forgotPasswordTokenExpiry"
+            );
+
+        const cookieOptions = {
+            httpOnly: true,
+            secure: true,
+        };
+
+        return res
+            .status(200)
+            .cookie(
+                "accessToken",
+                accessToken,
+                cookieOptions
+            )
+            .cookie(
+                "refreshToken",
+                refreshToken,
+                cookieOptions
+            )
+            .json(
+                new ApiResponse(
+                    200,
+                    loggedInUser,
+                    "User logged in successfully"
+                )
+            );
+    }
+);
+
+
+
+
+const logoutUser = asyncHandler(async (req, res) => {
+
+    if (!req.user) {
+        throw new ApiError(401, "Unauthorized request");
+    }
+
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: {
+                refreshToken: null,
+            },
+        }
+    );
+
+    const options = {
+        httpOnly: true,
+        secure: true,
+    };
+
+    return res
+        .status(200)
+        .clearCookie("refreshToken", options)
+        .clearCookie("accessToken", options)
+        .json(
+            new ApiResponse(
+                200,
+                {},
+                "User logged out successfully"
+            )
+        );
+});
+
+
+export { registerUser, verifyEmail, login, logoutUser };
