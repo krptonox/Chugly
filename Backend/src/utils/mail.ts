@@ -10,23 +10,7 @@ interface SendMailOptions {
     mailgenContent: Mailgen.Content;
 }
 
-interface MailgenButton {
-    color: string;
-    text: string;
-    link: string;
-}
 
-interface MailgenContent {
-    body: {
-        name: string;
-        intro: string;
-        action: {
-            instruction: string;
-            button: MailgenButton;
-        };
-        outro: string;
-    };
-}
 
 const sendMail = async (options: SendMailOptions): Promise<void> => {
     const mailGenerator = new Mailgen({
@@ -74,13 +58,13 @@ const sendMail = async (options: SendMailOptions): Promise<void> => {
 const emailVerficationMailgenContent = (
     username: string,
     verificationurl: string
-): MailgenContent => {
+): Mailgen.Content => {
     return {
         body: {
             name: username,
-            intro: "Welcome to Dekan! We're very excited to have you on board.",
+            intro: "Welcome to Chugly! We're very excited to have you on board.",
             action: {
-                instruction:
+                instructions:
                     "To verify your email, please click the button below:",
                 button: {
                     color: "#22BC66",
@@ -97,13 +81,13 @@ const emailVerficationMailgenContent = (
 const forgotPasswordMailgenContent = (
     username: string,
     passwordreseturl: string
-): MailgenContent => {
+): Mailgen.Content => {
     return {
         body: {
             name: username,
             intro: "We're resetting your password.",
             action: {
-                instruction:
+                instructions:
                     "To reset your password, please click the button below:",
                 button: {
                     color: "#ad1f1f",

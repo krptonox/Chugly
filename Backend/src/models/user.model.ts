@@ -8,6 +8,7 @@ import { hash, verifyPassword } from "ironpass";
 
 import jwt, { SignOptions } from "jsonwebtoken";
 
+import crypto from "crypto";
 
 
 // --------------------------------------------------
@@ -224,5 +225,40 @@ userSchema.methods.generateRefreshToken = function (): string {
     );
 };
 
+
+
+// --------------------------------------------------
+// generate random token for mailverification
+// --------------------------------------------------
+
+
+
+interface ITemporaryToken {
+    unHashedToken: string;
+    hashedToken: string;
+    TokenExpiry: Date;
+}
+
+userSchema.methods.generateTemporaryToken =
+    function (): ITemporaryToken {
+        const unHashedToken = crypto
+            .randomBytes(20)
+            .toString("hex");
+
+        const hashedToken = crypto
+            .createHash("sha256")
+            .update(unHashedToken)
+            .digest("hex");
+
+        const TokenExpiry = new Date(
+            Date.now() + 20 * 60 * 1000
+        );
+
+        return {
+            unHashedToken,
+            hashedToken,
+            TokenExpiry,
+        };
+    };
 
 export const User =  mongoose.model<IUser>("User", userSchema);
