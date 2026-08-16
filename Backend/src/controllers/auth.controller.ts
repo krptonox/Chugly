@@ -311,4 +311,165 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 
-export { registerUser, verifyEmail, login, logoutUser };
+
+
+const resendEmailVerification = asyncHandler(
+    async (req, res) => {
+
+        // verifyJWT should have populated req.user
+        if (!req.user) {
+            throw new ApiError(
+                401,
+                "Unauthorized request"
+            );
+        }
+
+        const user = await User.findById(
+            req.user._id
+        );
+
+        if (!user) {
+            throw new ApiError(
+                404,
+                "User not found"
+            );
+        }
+
+        if (user.isEmailVerified) {
+            throw new ApiError(
+                409,
+                "Email is already verified"
+            );
+        }
+
+        const {
+            unHashedToken,
+            hashedToken,
+            TokenExpiry,
+        } = user.generateTemporaryToken();
+
+        user.emailVerificationToken = hashedToken;
+        user.emailVerificationTokenExpiry = TokenExpiry;
+
+        await user.save({
+            validateBeforeSave: false,
+        });
+
+        try {
+            await sendMail({
+                email: user.email,
+
+                subject: "Please verify your email",
+
+                mailgenContent:
+                    emailVerficationMailgenContent(
+                        user.username,
+                        `${req.protocol}://${req.get(
+                            "host"
+                        )}/api/v1/auth/verify-email/${unHashedToken}`
+                    ),
+            });
+        } catch (error: unknown) {
+            throw new ApiError(
+                500,
+                "Error sending verification email",
+                [
+                    error instanceof Error
+                        ? error.message
+                        : "Unknown error",
+                ],
+                error instanceof Error
+                    ? error.stack
+                    : undefined
+            );
+        }
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {},
+                "Verification email resent successfully"
+            )
+        );
+    }
+);
+
+const getCurrentUser = asyncHandler(
+    async (req: Request, res: Response) => {
+
+        if (!req.user) {
+            throw new ApiError(
+                401,
+                "Unauthorized request"
+            );
+        }
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                req.user,
+                "Current user fetched successfully"
+            )
+        );
+    }
+);
+
+
+
+const changeCurrentPassword = asyncHandler(
+    async (req: Request, res: Response) => {
+
+        const { oldPassword, newPassword } = req.body;
+
+        if (!req.user) {
+            throw new ApiError(
+                401,
+                "Unauthorized request"
+            );
+        }
+
+        if (!oldPassword || !newPassword) {
+            throw new ApiError(
+                400,
+                "Old password and new password are required"
+            );
+        }
+
+        const user = await User.findById(
+            req.user._id
+        );
+
+        if (!user) {
+            throw new ApiError(
+                404,
+                "User not found"
+            );
+        }
+
+        const isPasswordValid =
+            await user.isPasswordCorrect(oldPassword);
+
+        if (!isPasswordValid) {
+            throw new ApiError(
+                401,
+                "Invalid current password"
+            );
+        }
+
+        user.password = newPassword;
+
+        await user.save({
+            validateBeforeSave: false,
+        });
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {},
+                "Password changed successfully"
+            )
+        );
+    }
+);
+
+export { registerUser, verifyEmail, login, logoutUser, resendEmailVerification, getCurrentUser, changeCurrentPassword };
