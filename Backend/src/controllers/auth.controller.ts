@@ -37,7 +37,7 @@ const registerUser = asyncHandler(
         const createdUser = await User.findById(
             user._id
         ).select(
-            "-password -refreshToken -emailVerificationToken -emailVerificationTokenExpiry -forgotPasswordToken -forgotPasswordTokenExpiry"
+            "-refreshToken -emailVerificationToken -emailVerificationTokenExpiry -forgotPasswordToken -forgotPasswordTokenExpiry"
         );
 
         if (!createdUser) {
