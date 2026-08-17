@@ -1,0 +1,3 @@
+export const ROOM_MAX_MEMBERS = 100;
+export const ROOM_DISCOVERY_RADIUS_METERS = 1000;
+export const ROOM_DISPLAY_NAME_MAX_ATTEMPTS = 10;

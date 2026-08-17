@@ -1,5 +1,10 @@
 
-import { body, ValidationChain } from "express-validator";
+import {
+    body,
+    param,
+    query,
+    ValidationChain,
+} from "express-validator";
 
 const userRegisterValidator = () => {
     return [
@@ -73,6 +78,112 @@ const userResetForgotPasswordValidator = (): ValidationChain[] => {
     ];
 };
 
+const createRoomValidator = (): ValidationChain[] => {
+    return [
+        body("name")
+            .trim()
+            .notEmpty()
+            .withMessage("Room name is required")
+            .isLength({ max: 80 })
+            .withMessage("Room name cannot exceed 80 characters"),
 
+        body("visibility")
+            .isIn(["public", "private"])
+            .withMessage("Visibility must be public or private"),
 
-export { userRegisterValidator,userLoginValidator, userForgotPasswordValidator, userResetForgotPasswordValidator };
+        body("password")
+            .custom((value, { req }) => {
+                if (req.body.visibility === "private") {
+                    if (typeof value !== "string" || !value.trim()) {
+                        throw new Error(
+                            "Private rooms require a password"
+                        );
+                    }
+
+                    if (value.length < 8 || value.length > 128) {
+                        throw new Error(
+                            "Room password must be between 8 and 128 characters"
+                        );
+                    }
+                }
+
+                if (
+                    req.body.visibility === "public" &&
+                    value !== undefined &&
+                    value !== null &&
+                    String(value).trim() !== ""
+                ) {
+                    throw new Error(
+                        "Public rooms cannot have a password"
+                    );
+                }
+
+                return true;
+            }),
+
+        body("latitude")
+            .isFloat({ min: -90, max: 90 })
+            .withMessage("Latitude must be between -90 and 90")
+            .toFloat(),
+
+        body("longitude")
+            .isFloat({ min: -180, max: 180 })
+            .withMessage("Longitude must be between -180 and 180")
+            .toFloat(),
+    ];
+};
+
+const nearbyRoomsValidator = (): ValidationChain[] => {
+    return [
+        query("latitude")
+            .isFloat({ min: -90, max: 90 })
+            .withMessage("Latitude must be between -90 and 90")
+            .toFloat(),
+
+        query("longitude")
+            .isFloat({ min: -180, max: 180 })
+            .withMessage("Longitude must be between -180 and 180")
+            .toFloat(),
+    ];
+};
+
+const roomIdValidator = (): ValidationChain[] => {
+    return [
+        param("roomId")
+            .isMongoId()
+            .withMessage("Room ID must be a valid MongoDB ID"),
+    ];
+};
+
+const joinRoomValidator = (): ValidationChain[] => {
+    return [
+        body("password")
+            .optional()
+            .isString()
+            .withMessage("Room password must be a string")
+            .isLength({ max: 128 })
+            .withMessage("Room password cannot exceed 128 characters"),
+    ];
+};
+
+const membershipIdValidator = (): ValidationChain[] => {
+    return [
+        param("membershipId")
+            .isMongoId()
+            .withMessage(
+                "Membership ID must be a valid MongoDB ID"
+            ),
+    ];
+};
+
+export {
+    userRegisterValidator,
+    userLoginValidator,
+    userForgotPasswordValidator,
+    userResetForgotPasswordValidator,
+    createRoomValidator,
+    nearbyRoomsValidator,
+    roomIdValidator,
+    joinRoomValidator,
+    membershipIdValidator,
+};

@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import authRouter from "./routes/auth.route.js";
+import roomRouter from "./routes/room.route.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
@@ -59,6 +60,11 @@ app.use(express.static("public"));
 app.use(
     "/api/v1/auth",
     authRouter
+);
+
+app.use(
+    "/api/v1/rooms",
+    roomRouter
 );
 
 // --------------------------------------------------

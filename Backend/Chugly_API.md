@@ -279,6 +279,197 @@ The reset token is invalidated after successful use.
 
 ------------------------------------------------------------------------
 
+# Room System
+
+All Room endpoints require authentication through the `verifyJWT`
+middleware. The authenticated identity is always taken from `req.user._id`.
+Clients must not submit a user ID to identify the acting user.
+
+Room capacity is server-controlled at **100 members**. Nearby discovery is
+server-controlled at exactly **1000 meters**. Room locations are stored as
+GeoJSON points, but exact coordinates are not returned to clients.
+
+Room member identity is anonymous and generated per room using names such as
+`Chugly_4821`. Real usernames, email addresses, and password hashes are not
+returned by Room endpoints.
+
+## 11. Create Room
+
+**POST** `/rooms`
+
+### Authentication
+
+Required.
+
+### Request Body
+
+Public room:
+
+``` json
+{
+  "name": "Sunday Morning Run",
+  "visibility": "public",
+  "latitude": 40.7484,
+  "longitude": -73.9857
+}
+```
+
+Private room:
+
+``` json
+{
+  "name": "Private Study Group",
+  "visibility": "private",
+  "password": "StudyPassword123",
+  "latitude": 40.7484,
+  "longitude": -73.9857
+}
+```
+
+Private-room passwords are hashed with IronPass and are never returned.
+The creator is automatically added as the only admin and receives an
+anonymous display name.
+
+### Success
+
+**201 Created**
+
+The response includes the room summary and anonymous membership list. Exact
+coordinates and password hashes are excluded.
+
+------------------------------------------------------------------------
+
+## 12. Discover Nearby Rooms
+
+**GET** `/rooms/nearby?latitude=40.7484&longitude=-73.9857`
+
+### Authentication
+
+Required.
+
+The endpoint returns public and private rooms within exactly 1000 meters,
+ordered by distance. Private rooms are discoverable but require a password
+to join.
+
+### Success
+
+**200 OK**
+
+``` json
+{
+  "statusCode": 200,
+  "data": [
+    {
+      "_id": "room-id",
+      "name": "Sunday Morning Run",
+      "visibility": "public",
+      "memberCount": 12,
+      "maxMembers": 100,
+      "distanceMeters": 328.4,
+      "isFull": false,
+      "isMember": false,
+      "isAdmin": false
+    }
+  ],
+  "message": "Nearby rooms retrieved successfully",
+  "success": true
+}
+```
+
+The API does not accept a client-controlled radius. Invalid coordinates are
+rejected.
+
+------------------------------------------------------------------------
+
+## 13. Get My Rooms
+
+**GET** `/rooms/mine`
+
+### Authentication
+
+Required.
+
+Returns rooms where the authenticated user is currently a member. This
+supports persistent membership after a client reload or new login.
+
+------------------------------------------------------------------------
+
+## 14. Get Room
+
+**GET** `/rooms/:roomId`
+
+### Authentication
+
+Required.
+
+Returns room metadata. Anonymous member data is returned to current room
+members and admins. Non-members receive an empty `members` array.
+
+------------------------------------------------------------------------
+
+## 15. Join Room
+
+**POST** `/rooms/:roomId/join`
+
+### Authentication
+
+Required.
+
+Public-room request:
+
+``` json
+{}
+```
+
+Private-room request:
+
+``` json
+{
+  "password": "StudyPassword123"
+}
+```
+
+The join operation atomically checks capacity and membership before adding
+one member. A room cannot exceed 100 members. Repeating a join for a user
+who is already a member is idempotent and returns the existing membership.
+
+### Errors
+
+- `403` — Invalid private-room password
+- `409` — Room is full
+
+------------------------------------------------------------------------
+
+## 16. Leave Room
+
+**POST** `/rooms/:roomId/leave`
+
+### Authentication
+
+Required.
+
+A normal member is removed from the embedded membership list. The member
+count is decremented atomically.
+
+The creator cannot leave while other members remain. If the creator is the
+only member, leaving closes and deletes the room because v1 has no admin
+transfer functionality.
+
+------------------------------------------------------------------------
+
+## 17. Remove Room Member
+
+**DELETE** `/rooms/:roomId/members/:membershipId`
+
+### Authentication
+
+Required. Only the room creator can remove members.
+
+The creator cannot remove themselves. The removed member is deleted from the
+embedded membership list and the member count is decremented atomically.
+
+------------------------------------------------------------------------
+
 # Authentication Model
 
 Chugly uses access and refresh tokens.
@@ -333,6 +524,13 @@ New Access Token
   `/auth/change-current-password`                   POST     Required
   `/auth/forgot-password`                   POST     Public
   `/auth/reset-forgot-password/:resetToken`        POST     Public
+  `/rooms`                                  POST     Required
+  `/rooms/nearby`                           GET      Required
+  `/rooms/mine`                             GET      Required
+  `/rooms/:roomId`                          GET      Required
+  `/rooms/:roomId/join`                     POST     Required
+  `/rooms/:roomId/leave`                    POST     Required
+  `/rooms/:roomId/members/:membershipId`    DELETE   Required
 
 ------------------------------------------------------------------------
 
@@ -425,6 +623,27 @@ newPassword
 
 ------------------------------------------------------------------------
 
+### Room Creation
+
+``` text
+name
+visibility
+password (private rooms only)
+latitude
+longitude
+```
+
+### Nearby Room Discovery
+
+``` text
+latitude
+longitude
+```
+
+Room discovery always uses the server-controlled 1000-meter radius.
+
+------------------------------------------------------------------------
+
 # Frontend Integration Rules
 
 ## Web
@@ -477,6 +696,12 @@ platform-specific authentication/token-storage implementation.
     changing the API contract.
 9.  Any intentional API breaking change should be documented and
     versioned.
+10. Room capacity is controlled by the backend and is limited to 100 members.
+11. Room discovery is controlled by the backend and is limited to 1000 meters.
+12. Room passwords are hashed with IronPass and `passwordHash` is never
+    returned.
+13. Room members are represented by anonymous per-room display names.
+14. Room endpoints use `req.user._id` and require `verifyJWT`.
 
 ------------------------------------------------------------------------
 
@@ -494,6 +719,13 @@ platform-specific authentication/token-storage implementation.
 -   Change Password --- Complete
 -   Forgot Password --- Complete
 -   Reset Password --- Complete
+
+## Room System
+
+-   Create Room --- Complete
+-   Nearby Discovery --- Complete
+-   Join and Leave --- Complete
+-   Admin Member Removal --- Complete
 
 ## Clients
 
