@@ -21,6 +21,14 @@ export function AppLayout() {
               Dashboard
             </NavLink>
             <NavLink
+              to="/rooms"
+              className={({ isActive }) =>
+                `rounded-lg px-3 py-2 text-sm font-semibold transition ${isActive ? "bg-sage text-moss" : "text-ink/55 hover:text-ink"}`
+              }
+            >
+              Rooms
+            </NavLink>
+            <NavLink
               to="/account"
               className={({ isActive }) =>
                 `rounded-lg px-3 py-2 text-sm font-semibold transition ${isActive ? "bg-sage text-moss" : "text-ink/55 hover:text-ink"}`

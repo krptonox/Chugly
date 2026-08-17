@@ -13,6 +13,9 @@ import { RegisterPage } from "../pages/RegisterPage";
 import { ResendVerificationPage } from "../pages/ResendVerificationPage";
 import { ResetPasswordPage } from "../pages/ResetPasswordPage";
 import { VerifyEmailPage } from "../pages/VerifyEmailPage";
+import { CreateRoomPage } from "../pages/CreateRoomPage";
+import { RoomDetailsPage } from "../pages/RoomDetailsPage";
+import { RoomsPage } from "../pages/RoomsPage";
 
 export function App() {
   return (
@@ -40,6 +43,9 @@ export function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/rooms" element={<RoomsPage />} />
+          <Route path="/rooms/create" element={<CreateRoomPage />} />
+          <Route path="/rooms/:roomId" element={<RoomDetailsPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route
             path="/account/change-password"
