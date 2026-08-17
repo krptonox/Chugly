@@ -2,7 +2,8 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
-import authRouter from "./routes/auth.route.ts";
+import authRouter from "./routes/auth.route.js";
+import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
 
@@ -70,5 +71,7 @@ app.get("/", (req, res) => {
         message: "Chugly Backend is running!",
     });
 });
+
+app.use(errorHandler);
 
 export default app;

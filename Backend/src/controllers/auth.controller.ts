@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import crypto from "crypto";
-import { User } from "../models/user.model.js";
+import { User, type IUser } from "../models/user.model.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
@@ -10,6 +10,45 @@ import { Types } from "mongoose";
 //generate access token and refresh token for the user
 
 import mongoose from "mongoose";
+import { authCookieOptions } from "../utils/cookie-options.js";
+
+const getWebAppUrl = (): string => {
+    const configuredWebAppUrl = process.env.WEB_APP_URL;
+
+    if (!configuredWebAppUrl && process.env.NODE_ENV === "production") {
+        throw new ApiError(
+            500,
+            "Web application URL is not configured"
+        );
+    }
+
+    return (
+        configuredWebAppUrl || "http://localhost:5173"
+    ).replace(/\/+$/, "");
+};
+
+const getForgotPasswordRedirectUrl = (): string => {
+    return (
+        process.env.FORGOT_PASSWORD_REDIRECT_URL ||
+        `${getWebAppUrl()}/reset-password`
+    ).replace(/\/+$/, "");
+};
+
+const sanitizeUser = (user: IUser) => {
+    const {
+        password: _password,
+        refreshToken: _refreshToken,
+        emailVerificationToken: _emailVerificationToken,
+        emailVerificationTokenExpiry:
+            _emailVerificationTokenExpiry,
+        forgotPasswordToken: _forgotPasswordToken,
+        forgotPasswordTokenExpiry:
+            _forgotPasswordTokenExpiry,
+        ...safeUser
+    } = user.toObject();
+
+    return safeUser;
+};
 
 const generateAccessAndRefreshToken = async (
     userId: Types.ObjectId
@@ -105,7 +144,7 @@ try {
 
         mailgenContent: emailVerficationMailgenContent(
             user.username,
-            `${req.protocol}://${req.get("host")}/api/v1/users/verify-email/${unHashedToken}`
+            `${getWebAppUrl()}/verify-email/${unHashedToken}`
         ),
     });
 } catch (error: unknown) {
@@ -127,7 +166,7 @@ try {
         const createdUser = await User.findById(
             user._id
         ).select(
-            "-emailVerificationToken -emailVerificationTokenExpiry -forgotPasswordToken -forgotPasswordTokenExpiry"
+            "-password -refreshToken -emailVerificationToken -emailVerificationTokenExpiry -forgotPasswordToken -forgotPasswordTokenExpiry -__v"
         );
 
         if (!createdUser) {
@@ -140,7 +179,7 @@ try {
         return res.status(201).json(
             new ApiResponse(
                 201,
-                createdUser,
+                sanitizeUser(createdUser),
                 "User registered successfully"
             )
         );
@@ -247,22 +286,17 @@ const login = asyncHandler(
                 "-password -refreshToken -emailVerificationToken -emailVerificationTokenExpiry -forgotPasswordToken -forgotPasswordTokenExpiry"
             );
 
-        const cookieOptions = {
-            httpOnly: true,
-            secure: true,
-        };
-
         return res
             .status(200)
             .cookie(
                 "accessToken",
                 accessToken,
-                cookieOptions
+                authCookieOptions
             )
             .cookie(
                 "refreshToken",
                 refreshToken,
-                cookieOptions
+                authCookieOptions
             )
             .json(
                 new ApiResponse(
@@ -295,15 +329,10 @@ const logoutUser = asyncHandler(async (req, res) => {
         }
     );
 
-    const options = {
-        httpOnly: true,
-        secure: true,
-    };
-
     return res
         .status(200)
-        .clearCookie("refreshToken", options)
-        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", authCookieOptions)
+        .clearCookie("accessToken", authCookieOptions)
         .json(
             new ApiResponse(
                 200,
@@ -367,9 +396,7 @@ const resendEmailVerification = asyncHandler(
                 mailgenContent:
                     emailVerficationMailgenContent(
                         user.username,
-                        `${req.protocol}://${req.get(
-                            "host"
-                        )}/api/v1/auth/verify-email/${unHashedToken}`
+                        `${getWebAppUrl()}/verify-email/${unHashedToken}`
                     ),
             });
         } catch (error: unknown) {
@@ -410,7 +437,7 @@ const getCurrentUser = asyncHandler(
         return res.status(200).json(
             new ApiResponse(
                 200,
-                req.user,
+                sanitizeUser(req.user),
                 "Current user fetched successfully"
             )
         );
@@ -547,22 +574,17 @@ const refreshAccessToken = asyncHandler(
                 user._id
             );
 
-            const options = {
-                httpOnly: true,
-                secure: true,
-            };
-
             return res
                 .status(200)
                 .cookie(
                     "refreshToken",
                     refreshToken,
-                    options
+                    authCookieOptions
                 )
                 .cookie(
                     "accessToken",
                     accessToken,
-                    options
+                    authCookieOptions
                 )
                 .json(
                     new ApiResponse(
@@ -632,7 +654,7 @@ const forgotPassword = asyncHandler(
                 mailgenContent:
                     forgotPasswordMailgenContent(
                         user.username,
-                        `${process.env.FORGOT_PASSWORD_REDIRECT_URL}/${unHashedToken}`
+                        `${getForgotPasswordRedirectUrl()}/${unHashedToken}`
                     ),
             });
         } catch (error: unknown) {

@@ -65,7 +65,9 @@ For Web, requests that need cookies should use:
 withCredentials: true
 ```
 
-Do not store HttpOnly authentication cookies in `localStorage`.
+The backend uses HttpOnly cookies. In development they are usable over
+`http://localhost`; in production they are marked `secure`. Do not store
+HttpOnly authentication cookies in `localStorage`.
 
 ------------------------------------------------------------------------
 
@@ -88,7 +90,7 @@ token.
 
 ## 4. Refresh Access Token
 
-**POST** `/auth/refresh-token`
+**POST** `/auth/refresh-access-token`
 
 ### Authentication
 
@@ -104,7 +106,7 @@ Generates a new access token and refresh token.
 
 ## 5. Get Current User
 
-**GET** `/auth/current-user`
+**POST** `/auth/current-user`
 
 ### Authentication
 
@@ -144,6 +146,18 @@ Email verified successfully
 
 The verification token is then invalidated.
 
+### Web email flow
+
+The backend sends verification links to the Web application rather than
+posting directly to the API. Configure `WEB_APP_URL` to the Web origin
+(for example, `http://localhost:5173`). The Web route should be:
+
+``` text
+/verify-email/:verificationToken
+```
+
+When opened, that Web page should send the `POST` request documented above.
+
 ------------------------------------------------------------------------
 
 ## 7. Resend Email Verification
@@ -168,7 +182,7 @@ Verification email resent successfully
 
 ## 8. Change Current Password
 
-**POST** `/auth/change-password`
+**POST** `/auth/change-current-password`
 
 ### Authentication
 
@@ -218,13 +232,18 @@ Password reset email sent successfully
 ```
 
 The backend generates a temporary reset token and sends it through
-email.
+email. Configure `FORGOT_PASSWORD_REDIRECT_URL` to the Web reset route,
+for example `http://localhost:5173/reset-password`. If it is not set,
+the backend uses `${WEB_APP_URL}/reset-password`.
+
+The Web route should be `/reset-password/:resetToken`. The Web reset page
+receives the token in its URL and sends the `POST` request documented below.
 
 ------------------------------------------------------------------------
 
 ## 10. Reset Password
 
-**POST** `/auth/reset-password/:resetToken`
+**POST** `/auth/reset-forgot-password/:resetToken`
 
 ### Authentication
 
@@ -237,7 +256,7 @@ Not required.
 Example:
 
 ``` text
-/auth/reset-password/abc123
+/auth/reset-forgot-password/abc123
 ```
 
 ### Request Body
@@ -291,7 +310,7 @@ When the access token expires:
 ``` text
 Frontend
    ↓
-POST /auth/refresh-token
+POST /auth/refresh-access-token
    ↓
 Refresh Token
    ↓
@@ -307,13 +326,13 @@ New Access Token
   `/auth/register`                          POST     Public
   `/auth/login`                             POST     Public
   `/auth/logout`                            POST     Required
-  `/auth/refresh-token`                     POST     Refresh token
-  `/auth/current-user`                      GET      Required
+  `/auth/refresh-access-token`                     POST     Refresh token
+  `/auth/current-user`                      POST      Required
   `/auth/verify-email/:verificationToken`   POST     Public
   `/auth/resend-email-verification`         POST     Required
-  `/auth/change-password`                   POST     Required
+  `/auth/change-current-password`                   POST     Required
   `/auth/forgot-password`                   POST     Public
-  `/auth/reset-password/:resetToken`        POST     Public
+  `/auth/reset-forgot-password/:resetToken`        POST     Public
 
 ------------------------------------------------------------------------
 
@@ -338,6 +357,26 @@ Example:
   "data": {},
   "message": "Password reset successfully",
   "success": true
+}
+```
+
+The success messages shown in individual endpoint sections are the
+`message` field of this JSON response.
+
+Errors use the same top-level fields with `success: false`, `data: null`,
+and an `errors` array:
+
+``` json
+{
+  "statusCode": 422,
+  "data": null,
+  "message": "Received data is not valid",
+  "success": false,
+  "errors": [
+    {
+      "email": "Please provide a valid email address"
+    }
+  ]
 }
 ```
 

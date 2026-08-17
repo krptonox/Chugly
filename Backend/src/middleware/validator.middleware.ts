@@ -1,6 +1,6 @@
 import { validationResult, type ValidationError, type FieldValidationError } from "express-validator";
 import type { RequestHandler } from "express";
-import { ApiError } from "../utils/api-error";
+import { ApiError } from "../utils/api-error.js";
 // ...existing code...
 
 const isFieldError = (err: ValidationError): err is FieldValidationError => err.type === "field";
