@@ -649,7 +649,7 @@ const forgotPassword = asyncHandler(
                     : undefined
             );
         }
-
+        console.log("RESET TOKEN:", unHashedToken);
         return res.status(200).json(
             new ApiResponse(
                 200,
