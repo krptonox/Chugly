@@ -14,17 +14,17 @@ export function AuthCard({
   footer?: ReactNode;
 }) {
   return (
-    <div className="rounded-[2rem] border border-ink/10 bg-white p-6 shadow-soft sm:p-8">
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-coral">
+    <div className="animate-fade-up rounded-[2rem] border border-ink/10 bg-white p-6 shadow-soft sm:p-8">
+      <p className="text-xs font-bold uppercase tracking-[0.2em] text-coral-ink">
         {eyebrow}
       </p>
       <h1 className="mt-3 text-3xl font-black tracking-[-0.04em] text-ink">
         {title}
       </h1>
-      <p className="mt-2 text-sm leading-6 text-ink/55">{description}</p>
+      <p className="mt-2 text-sm leading-6 text-ink/60">{description}</p>
       <div className="mt-7">{children}</div>
       {footer && (
-        <div className="mt-6 border-t border-ink/10 pt-5 text-center text-sm text-ink/55">
+        <div className="mt-6 border-t border-ink/10 pt-5 text-center text-sm text-ink/60">
           {footer}
         </div>
       )}

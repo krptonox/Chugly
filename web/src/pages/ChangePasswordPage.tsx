@@ -25,17 +25,11 @@ export function ChangePasswordPage() {
     const validationErrors = validateChangePassword(oldPassword, newPassword);
     setErrors(validationErrors);
 
-    if (Object.keys(validationErrors).length > 0) {
-      return;
-    }
+    if (Object.keys(validationErrors).length > 0) return;
 
     setSubmitting(true);
-
     try {
-      const response = await authApi.changeCurrentPassword({
-        oldPassword,
-        newPassword,
-      });
+      const response = await authApi.changeCurrentPassword({ oldPassword, newPassword });
       setOldPassword("");
       setNewPassword("");
       setSuccess(response.data.message);
@@ -53,45 +47,18 @@ export function ChangePasswordPage() {
         eyebrow="Account security"
         title="Change your password"
         description="Use your current password to choose a new one."
-        footer={
-          <Link to="/account" className="font-bold text-moss hover:text-ink">
-            Back to account
-          </Link>
-        }
+        footer={<Link to="/account" className="font-bold text-moss hover:text-ink">Back to account</Link>}
       >
         <form className="space-y-4" onSubmit={handleSubmit} noValidate>
           {formError && <Alert message={formError} />}
           {success && <Alert tone="success" message={success} />}
-          <FormField
-            label="Current password"
-            htmlFor="old-password"
-            error={errors.oldPassword}
-          >
-            <PasswordInput
-              id="old-password"
-              autoComplete="current-password"
-              placeholder="Your current password"
-              value={oldPassword}
-              onChange={(event) => setOldPassword(event.target.value)}
-            />
+          <FormField label="Current password" htmlFor="old-password" error={errors.oldPassword} required>
+            <PasswordInput id="old-password" autoComplete="current-password" placeholder="Your current password" value={oldPassword} onChange={(event) => setOldPassword(event.target.value)} aria-invalid={Boolean(errors.oldPassword)} />
           </FormField>
-          <FormField
-            label="New password"
-            htmlFor="new-password"
-            error={errors.newPassword}
-            hint="8+ characters"
-          >
-            <PasswordInput
-              id="new-password"
-              autoComplete="new-password"
-              placeholder="Your new password"
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-            />
+          <FormField label="New password" htmlFor="new-password" error={errors.newPassword} required hint="8+ characters">
+            <PasswordInput id="new-password" autoComplete="new-password" placeholder="Your new password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} aria-invalid={Boolean(errors.newPassword)} />
           </FormField>
-          <Button type="submit" loading={submitting} className="mt-2 w-full">
-            Change password
-          </Button>
+          <Button type="submit" loading={submitting} className="mt-2 w-full">Change password</Button>
         </form>
       </AuthCard>
     </div>

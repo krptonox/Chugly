@@ -1,18 +1,10 @@
 import { useCallback, useState } from "react";
+import type { GeolocationStatus } from "./room.types";
 
 export type Coordinates = {
   latitude: number;
   longitude: number;
 };
-
-export type GeolocationStatus =
-  | "idle"
-  | "loading"
-  | "success"
-  | "permission-denied"
-  | "unavailable"
-  | "timeout"
-  | "unsupported";
 
 type GeolocationState = {
   coordinates: Coordinates | null;

@@ -1,6 +1,15 @@
 export type RoomVisibility = "public" | "private";
 export type RoomMemberRole = "admin" | "member";
 
+export type GeolocationStatus =
+  | "idle"
+  | "loading"
+  | "success"
+  | "permission-denied"
+  | "unavailable"
+  | "timeout"
+  | "unsupported";
+
 export type RoomMember = {
   membershipId: string;
   displayName: string;

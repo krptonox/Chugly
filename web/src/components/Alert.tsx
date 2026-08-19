@@ -1,3 +1,9 @@
+const styles = {
+  error: "border-coral/25 bg-coral/10 text-coral-ink",
+  success: "border-moss/20 bg-sage text-moss",
+  info: "border-info-ink/15 bg-[#edf4f5] text-info-ink",
+};
+
 export function Alert({
   message,
   tone = "error",
@@ -5,18 +11,16 @@ export function Alert({
   message: string;
   tone?: "error" | "success" | "info";
 }) {
-  const styles = {
-    error: "border-coral/20 bg-coral/10 text-[#a84630]",
-    success: "border-moss/20 bg-sage text-moss",
-    info: "border-ink/10 bg-white/70 text-ink/70",
-  };
-
   return (
     <div
-      className={`rounded-xl border px-3.5 py-3 text-sm ${styles[tone]}`}
-      role="alert"
+      className={`flex items-start gap-2.5 rounded-xl border px-3.5 py-3 text-sm ${styles[tone]}`}
+      role={tone === "error" ? "alert" : "status"}
+      aria-live={tone === "error" ? "assertive" : "polite"}
     >
-      {message}
+      <span className="mt-0.5 text-xs font-black" aria-hidden="true">
+        {tone === "success" ? "✓" : tone === "info" ? "i" : "!"}
+      </span>
+      <span>{message}</span>
     </div>
   );
 }

@@ -1,10 +1,10 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Alert } from "../components/Alert";
 import { AuthCard } from "../components/AuthCard";
 import { Button } from "../components/Button";
 import { authApi } from "../features/auth/auth.api";
 import { getApiErrorMessage } from "../lib/api-errors";
+import { useState } from "react";
 
 export function ResendVerificationPage() {
   const [submitting, setSubmitting] = useState(false);
@@ -15,7 +15,6 @@ export function ResendVerificationPage() {
     setSubmitting(true);
     setSuccess("");
     setError("");
-
     try {
       const response = await authApi.resendEmailVerification();
       setSuccess(response.data.message);
@@ -32,18 +31,12 @@ export function ResendVerificationPage() {
         eyebrow="Almost there"
         title="Verify your email"
         description="We will send another verification link to the email on your account."
-        footer={
-          <Link to="/account" className="font-bold text-moss hover:text-ink">
-            Back to account
-          </Link>
-        }
+        footer={<Link to="/account" className="font-bold text-moss hover:text-ink">Back to account</Link>}
       >
         <div className="space-y-4">
           {error && <Alert message={error} />}
           {success && <Alert tone="success" message={success} />}
-          <Button onClick={() => void resend()} loading={submitting} className="w-full">
-            Resend verification email
-          </Button>
+          <Button onClick={() => void resend()} loading={submitting} className="w-full">Resend verification email</Button>
         </div>
       </AuthCard>
     </div>

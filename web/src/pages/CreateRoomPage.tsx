@@ -3,15 +3,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { Alert } from "../components/Alert";
 import { Button } from "../components/Button";
 import { FormField } from "../components/FormField";
+import { Icon } from "../components/Icon";
 import { Input } from "../components/Input";
+import { LocationStatus } from "../components/LocationStatus";
+import { PageHeader } from "../components/PageHeader";
 import { PasswordInput } from "../components/PasswordInput";
+import { RadioCardGroup } from "../components/RadioCardGroup";
+import { SessionExpiredState } from "../components/SessionExpiredState";
 import { useAuth } from "../features/auth/useAuth";
 import { roomApi } from "../features/rooms/room.api";
-import {
-  getRoomErrorMessage,
-  getRoomFieldErrors,
-  isUnauthorizedRoomError,
-} from "../features/rooms/room-errors";
+import { getRoomErrorMessage, getRoomFieldErrors, isUnauthorizedRoomError } from "../features/rooms/room-errors";
 import { validateCreateRoom } from "../features/rooms/room.validation";
 import { useGeolocation } from "../features/rooms/useGeolocation";
 import type { RoomVisibility } from "../features/rooms/room.types";
@@ -38,19 +39,10 @@ export function CreateRoomPage() {
     setFormError("");
     setSessionExpired(false);
 
-    const validationErrors = validateCreateRoom(
-      name,
-      visibility,
-      password,
-      Boolean(location.coordinates)
-    );
+    const validationErrors = validateCreateRoom(name, visibility, password, Boolean(location.coordinates));
     setErrors(validationErrors);
 
-    if (Object.keys(validationErrors).length > 0) {
-      return;
-    }
-
-    if (!location.coordinates) {
+    if (Object.keys(validationErrors).length > 0 || !location.coordinates) {
       return;
     }
 
@@ -64,16 +56,13 @@ export function CreateRoomPage() {
         latitude: location.coordinates.latitude,
         longitude: location.coordinates.longitude,
       });
-
       navigate(`/rooms/${encodeURIComponent(response.data.data._id)}`);
     } catch (error) {
       if (isUnauthorizedRoomError(error)) {
         setSessionExpired(true);
       } else {
         setErrors(getRoomFieldErrors(error));
-        setFormError(
-          getRoomErrorMessage(error, "We could not create the room.")
-        );
+        setFormError(getRoomErrorMessage(error, "We could not create the room."));
       }
     } finally {
       setSubmitting(false);
@@ -82,129 +71,83 @@ export function CreateRoomPage() {
 
   const signInAgain = async () => {
     await logout();
-    navigate("/login", {
-      replace: true,
-      state: { from: "/rooms/create" },
-    });
+    navigate("/login", { replace: true, state: { from: "/rooms/create" } });
   };
 
-  const locationMessage =
-    location.status === "loading"
-      ? "Finding your current location..."
-      : location.status === "success"
-        ? "Current location ready."
-        : location.errorMessage || "Location is required to create a room.";
-
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-coral">
-            New room
-          </p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-ink sm:text-4xl">
-            Create a Chugly room
-          </h1>
-        </div>
-        <Link
-          to="/rooms"
-          className="text-sm font-bold text-moss transition hover:text-ink"
-        >
-          Back to rooms
-        </Link>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-7">
+      <PageHeader
+        eyebrow="New room"
+        title="Create a Chugly room"
+        description="Make a nearby place for a plan, a group, or whatever you want to keep moving."
+        actions={<Link to="/rooms" className="text-sm font-bold text-moss hover:text-ink">Back to rooms</Link>}
+      />
 
-      {sessionExpired && (
-        <div className="space-y-3">
-          <Alert message="Your session has expired. Sign in again to continue." />
-          <button
-            type="button"
-            className="rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white transition hover:bg-moss"
-            onClick={() => void signInAgain()}
-          >
-            Sign in again
-          </button>
-        </div>
-      )}
+      {sessionExpired && <SessionExpiredState onSignIn={signInAgain} />}
 
-      <form
-        className="space-y-5 rounded-3xl border border-ink/10 bg-white p-6 shadow-sm sm:p-8"
-        onSubmit={handleSubmit}
-        noValidate
-      >
+      <form className="space-y-7 rounded-3xl border border-ink/10 bg-white p-6 shadow-card sm:p-8" onSubmit={handleSubmit} noValidate>
         {formError && <Alert message={formError} />}
 
-        <FormField label="Room name" htmlFor="room-name" error={errors.name}>
+        <FormField label="Room name" htmlFor="room-name" error={errors.name} required hint={`${name.length}/80`}>
           <Input
             id="room-name"
             placeholder="Sunday morning run"
             value={name}
             onChange={(event) => setName(event.target.value)}
             maxLength={80}
+            required
+            aria-invalid={Boolean(errors.name)}
+            aria-describedby={errors.name ? "room-name-error" : undefined}
           />
         </FormField>
 
-        <FormField
-          label="Visibility"
-          htmlFor="room-visibility"
-          error={errors.visibility}
-        >
-          <select
-            id="room-visibility"
-            className="min-h-11 w-full rounded-xl border border-ink/15 bg-cream px-3.5 py-2.5 text-sm text-ink outline-none transition focus:border-moss focus:ring-2 focus:ring-moss/15"
+        <FormField label="Who can join?" error={errors.visibility} required>
+          <RadioCardGroup
+            label="Room visibility"
             value={visibility}
-            onChange={(event) =>
-              setVisibility(event.target.value as RoomVisibility)
-            }
-          >
-            <option value="public">Public — anyone nearby can join</option>
-            <option value="private">Private — password required</option>
-          </select>
+            onChange={setVisibility}
+            options={[
+              {
+                value: "public" as const,
+                title: "Public room",
+                description: "Anyone nearby can see and join this room.",
+                icon: <Icon name="users" size={18} />,
+              },
+              {
+                value: "private" as const,
+                title: "Private room",
+                description: "Nearby people can find it, but a password is required.",
+                icon: <Icon name="lock" size={18} />,
+              },
+            ]}
+          />
         </FormField>
 
         {visibility === "private" && (
-          <FormField
-            label="Room password"
-            htmlFor="room-password"
-            error={errors.password}
-          >
-            <PasswordInput
-              id="room-password"
-              autoComplete="new-password"
-              placeholder="At least 8 characters"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-          </FormField>
+          <div className="animate-fade-up">
+            <FormField label="Room password" htmlFor="room-password" error={errors.password} required hint="8–128 characters">
+              <PasswordInput
+                id="room-password"
+                autoComplete="new-password"
+                placeholder="Make it memorable"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                aria-invalid={Boolean(errors.password)}
+                aria-describedby={errors.password ? "room-password-error" : undefined}
+              />
+            </FormField>
+          </div>
         )}
 
-        <FormField label="Current location" error={errors.location}>
-          <div className="rounded-xl border border-ink/10 bg-cream px-3.5 py-3 text-sm text-ink/60">
-            {locationMessage}
-          </div>
-          {(location.status === "permission-denied" ||
-            location.status === "unavailable" ||
-            location.status === "timeout" ||
-            location.status === "unsupported") && (
-            <button
-              type="button"
-              className="mt-2 text-sm font-bold text-moss transition hover:text-ink"
-              onClick={location.requestLocation}
-            >
-              Try location again
-            </button>
-          )}
+        <FormField label="Room location" error={errors.location} required>
+          <LocationStatus status={location.status} errorMessage={location.errorMessage} onRetry={location.requestLocation} />
         </FormField>
 
-        <p className="text-xs leading-5 text-ink/45">
-          Chugly uses your current location to place this room and find it for nearby users. Capacity and discovery radius are controlled by the server.
-        </p>
+        <div className="rounded-2xl border border-ink/10 bg-cream/80 p-4 text-sm leading-6 text-ink/60">
+          Chugly uses your current location to place this room and show it to people within 1000 meters. Exact coordinates are never shown, and the server controls room capacity at 100 members.
+        </div>
 
-        <Button
-          type="submit"
-          loading={submitting}
-          className="w-full"
-        >
+        <Button type="submit" loading={submitting} className="sticky bottom-4 w-full shadow-lift">
           Create room
         </Button>
       </form>
