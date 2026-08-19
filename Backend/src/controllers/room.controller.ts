@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import type { Types } from "mongoose";
 
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
@@ -18,7 +19,17 @@ import {
     toRoomDetail,
     toRoomSummary,
 } from "../utils/room-response.js";
-import type { CreateRoomInput } from "../types/room.types.js";
+import type { IRoom } from "../models/room.model.js";
+import type {
+    CreateRoomInput,
+    IRoomMember,
+} from "../types/room.types.js";
+import {
+    publishRoomClosed,
+    publishRoomMemberJoined,
+    publishRoomMemberLeft,
+    publishRoomMemberRemoved,
+} from "../realtime/room-event-publisher.js";
 
 const getAuthenticatedUserId = (req: Request) => {
     if (!req.user) {
@@ -26,6 +37,24 @@ const getAuthenticatedUserId = (req: Request) => {
     }
 
     return req.user._id;
+};
+
+const findMemberForUser = (
+    room: IRoom,
+    userId: Types.ObjectId
+): IRoomMember | undefined => room.members.find((member) =>
+    member.user.equals(userId)
+);
+
+const getPostMutationRoom = async (
+    roomId: string,
+    fallbackRoom: IRoom
+): Promise<IRoom> => {
+    try {
+        return await getRoomService(roomId);
+    } catch {
+        return fallbackRoom;
+    }
 };
 
 export const createRoom = asyncHandler(
@@ -128,6 +157,13 @@ export const joinRoom = asyncHandler(
             password
         );
 
+        if (!result.alreadyMember) {
+            publishRoomMemberJoined(
+                result.room,
+                result.membership
+            );
+        }
+
         return res.status(200).json(
             new ApiResponse(
                 200,
@@ -150,7 +186,27 @@ export const leaveRoom = asyncHandler(
     async (req: Request, res: Response) => {
         const userId = getAuthenticatedUserId(req);
         const { roomId } = req.params as { roomId: string };
+        const roomBeforeLeave = await getRoomService(roomId);
+        const leavingMember = findMemberForUser(
+            roomBeforeLeave,
+            userId
+        );
         const result = await leaveRoomService(userId, roomId);
+
+        if (result.deleted) {
+            publishRoomClosed(result.roomId);
+        } else if (leavingMember) {
+            const roomAfterLeave = await getPostMutationRoom(
+                result.roomId,
+                roomBeforeLeave
+            );
+
+            publishRoomMemberLeft(
+                roomAfterLeave,
+                leavingMember,
+                userId.toString()
+            );
+        }
 
         return res.status(200).json(
             new ApiResponse(
@@ -174,12 +230,23 @@ export const removeRoomMember = asyncHandler(
             roomId: string;
             membershipId: string;
         };
+        const roomBeforeRemoval = await getRoomService(roomId);
+        const removedMember = roomBeforeRemoval.members.find(
+            (member) => member._id.equals(membershipId)
+        );
 
         const room = await removeRoomMemberService(
             userId,
             roomId,
             membershipId
         );
+
+        if (removedMember) {
+            publishRoomMemberRemoved(
+                room,
+                removedMember
+            );
+        }
 
         return res.status(200).json(
             new ApiResponse(

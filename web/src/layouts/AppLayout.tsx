@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 import { Logo } from "../components/Logo";
 import { Button } from "../components/Button";
 import { MobileNav } from "../components/MobileNav";
+import { RoomRealtimeStatus } from "../components/RoomRealtimeStatus";
 import { useAuth } from "../features/auth/useAuth";
 
 const navItems = [
@@ -37,6 +38,7 @@ export function AppLayout() {
             ))}
           </nav>
           <div className="flex items-center gap-2.5">
+            <RoomRealtimeStatus className="hidden md:inline-flex" />
             <Link
               to="/account"
               className="group flex items-center gap-2 rounded-xl p-1.5 text-right transition hover:bg-white/70 focus:outline-none focus:ring-2 focus:ring-moss/30"
