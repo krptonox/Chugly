@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 
 import authRouter from "./routes/auth.route.js";
 import roomRouter from "./routes/room.route.js";
+import roomMessageRouter from "./routes/roomMessage.routes.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
@@ -65,6 +66,11 @@ app.use(
 app.use(
     "/api/v1/rooms",
     roomRouter
+);
+
+app.use(
+    "/api/v1/room-messages",
+    roomMessageRouter
 );
 
 // --------------------------------------------------
