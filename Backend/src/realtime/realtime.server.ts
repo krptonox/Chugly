@@ -34,12 +34,26 @@ const getAllowedOrigins = (): string[] => {
 export const createRealtimeServer = (
     httpServer: HttpServer
 ): Server | undefined => {
+
+    console.log("1. createRealtimeServer called");
+
+    console.log(
+        "2. REALTIME_ENABLED:",
+        process.env.REALTIME_ENABLED
+    );
+
     if (process.env.REALTIME_ENABLED !== "true") {
+        console.log("3. Realtime disabled");
+
         configureRoomEventPublisher(undefined);
         return undefined;
     }
 
+    console.log("4. Realtime is enabled");
+
     const allowedOrigins = getAllowedOrigins();
+
+    console.log("5. Allowed origins:", allowedOrigins);
 
     const io = new Server(httpServer, {
         transports: ["websocket"],
@@ -58,6 +72,8 @@ export const createRealtimeServer = (
             callback("Realtime origin is not allowed", false);
         },
     });
+
+    console.log("6. Socket.IO server created");
 
     io.use(async (socket, next) => {
         try {
@@ -81,10 +97,12 @@ export const createRealtimeServer = (
     configureRoomEventPublisher(io);
 
     io.on("connection", (socket) => {
+        console.log("7. SOCKET CONNECTED:", socket.id);
+
         registerRoomSubscriptionHandlers(socket);
     });
 
-    console.log("Socket.IO realtime transport enabled");
+    console.log("8. Socket.IO realtime transport enabled");
 
     return io;
 };

@@ -125,12 +125,16 @@ const getAuthenticatedUserId = (
 };
 
 const registerSubscribeHandler = (socket: Socket): void => {
+    
     socket.on(
         "room:subscribe",
         (
             payload: unknown,
             acknowledge?: (response: RoomSubscriptionAck) => void
         ) => {
+
+            console.log("ROOM:SUBSCRIBE EVENT RECEIVED");
+            
             enqueueSubscriptionOperation(socket, async () => {
                 const respond =
                     typeof acknowledge === "function"
@@ -155,6 +159,12 @@ const registerSubscribeHandler = (socket: Socket): void => {
                     const isMember = room.members.some(
                         (member) =>
                             member.user.toString() === userId
+                    );
+                    
+                    console.log(
+                        "ROOM SUBSCRIBE REQUEST:",
+                        roomId,
+                        socket.data.userId
                     );
 
                     if (!isMember) {
@@ -183,6 +193,11 @@ const registerSubscribeHandler = (socket: Socket): void => {
 
                     await socket.join(getRoomChannel(roomId));
                     socket.data.subscribedRoomId = roomId;
+
+                    console.log(
+                    "SOCKET JOINED ROOM:",
+                    `room:${roomId}`
+                    );
 
                     respond({ ok: true, roomId });
                 } catch (error) {
