@@ -40,7 +40,9 @@ export function useRoomRealtime(roomId?: string): {
 
     setSubscriptionStatus("subscribing");
     setSubscriptionError("");
-
+    
+    console.log("SUBSCRIBING TO ROOM:", roomId);
+    
     void subscribeToRoom(roomId)
       .then((response) => {
         if (!active) {
