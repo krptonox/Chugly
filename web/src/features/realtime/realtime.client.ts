@@ -5,6 +5,7 @@ import type {
   RealtimeStatus,
   RealtimeStatusListener,
   RoomSubscriptionAck,
+  RoomMessageCreatedEvent,
   ServerToClientEvents,
 } from "./realtime.types";
 
@@ -176,5 +177,11 @@ export const createRealtimeClient = (): RealtimeClient => {
       emitRoomOperation(socket, "room:subscribe", roomId),
     unsubscribeFromRoom: (roomId) =>
       emitRoomOperation(socket, "room:unsubscribe", roomId),
+    onRoomMessage: (listener) => {
+      socket.on("room.message_created", listener);
+      return () => {
+        socket.off("room.message_created", listener);
+      };
+    },
   };
 };

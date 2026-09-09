@@ -34,11 +34,31 @@ export type RoomSubscriptionStatus =
   | "subscribed"
   | "error";
 
+export type RoomMessage = {
+  _id: string;
+  roomId: string;
+  senderId: string;
+  displayName: string;
+  content: string;
+  status: "sent" | "deleted";
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RoomMessageCreatedEvent = {
+  eventId: string;
+  roomId: string;
+  occurredAt: string;
+  message: RoomMessage;
+};
+
 export type RealtimeStatusListener = (
   status: RealtimeStatus
 ) => void;
 
-export interface ServerToClientEvents {}
+export interface ServerToClientEvents {
+  "room.message_created": (event: RoomMessageCreatedEvent) => void;
+}
 
 export interface ClientToServerEvents {
   "room:subscribe": (
@@ -64,6 +84,9 @@ export type RealtimeClient = {
   unsubscribeFromRoom: (
     roomId: string
   ) => Promise<RoomSubscriptionAck>;
+  onRoomMessage: (
+    listener: (event: RoomMessageCreatedEvent) => void
+  ) => () => void;
 };
 
 export type RealtimeContextValue = {
@@ -71,4 +94,5 @@ export type RealtimeContextValue = {
   isConnected: boolean;
   subscribeToRoom: RealtimeClient["subscribeToRoom"];
   unsubscribeFromRoom: RealtimeClient["unsubscribeFromRoom"];
+  onRoomMessage: RealtimeClient["onRoomMessage"];
 };

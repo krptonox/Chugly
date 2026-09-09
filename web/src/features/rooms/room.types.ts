@@ -51,3 +51,14 @@ export type LeaveRoomResponse = {
   roomId: string;
   deleted: boolean;
 };
+
+export type RoomMessage = {
+  _id: string;
+  roomId: string;
+  senderId: string;
+  displayName: string;
+  content: string;
+  status: "sent" | "deleted";
+  createdAt: string;
+  updatedAt: string;
+};

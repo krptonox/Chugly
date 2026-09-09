@@ -89,14 +89,21 @@ export function RealtimeProvider({
     []
   );
 
+  const onRoomMessage = useCallback(
+    (listener: Parameters<RealtimeClient["onRoomMessage"]>[0]) =>
+      clientRef.current?.onRoomMessage(listener) ?? (() => undefined),
+    []
+  );
+
   const value = useMemo<RealtimeContextValue>(
     () => ({
       status,
       isConnected: status === "connected",
       subscribeToRoom,
       unsubscribeFromRoom,
+      onRoomMessage,
     }),
-    [status, subscribeToRoom, unsubscribeFromRoom]
+    [status, subscribeToRoom, unsubscribeFromRoom, onRoomMessage]
   );
 
   return (

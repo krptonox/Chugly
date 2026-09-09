@@ -1,6 +1,16 @@
 import mongoose, { Schema} from "mongoose";
 
-const roomMessageSchema  = new Schema({
+export interface IRoomMessage extends mongoose.Document {
+    roomId: mongoose.Types.ObjectId;
+    senderId: mongoose.Types.ObjectId;
+    displayName: string;
+    content: string;
+    status: "sent" | "deleted";
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const roomMessageSchema  = new Schema<IRoomMessage>({
 
     roomId:{
         type: Schema.Types.ObjectId,

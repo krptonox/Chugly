@@ -5,6 +5,7 @@ import type {
   JoinRoomResponse,
   LeaveRoomResponse,
   RoomDetail,
+  RoomMessage,
   RoomSummary,
 } from "./room.types";
 
@@ -39,5 +40,16 @@ export const roomApi = {
   removeRoomMember: (roomId: string, membershipId: string) =>
     apiClient.delete<ApiResponse<RoomDetail>>(
       `/rooms/${encodeURIComponent(roomId)}/members/${encodeURIComponent(membershipId)}`
+    ),
+
+  getRoomMessages: (roomId: string) =>
+    apiClient.get<ApiResponse<RoomMessage[]>>(
+      `/room-messages/${encodeURIComponent(roomId)}/messages`
+    ),
+
+  sendRoomMessage: (roomId: string, content: string) =>
+    apiClient.post<ApiResponse<RoomMessage>>(
+      `/room-messages/${encodeURIComponent(roomId)}/messages`,
+      { content }
     ),
 };

@@ -8,6 +8,7 @@ import { EmptyState } from "../components/EmptyState";
 import { Icon } from "../components/Icon";
 import { MemberRowSkeleton } from "../components/MemberRowSkeleton";
 import { RoomActionPanel } from "../components/RoomActionPanel";
+import { RoomChat } from "../components/RoomChat";
 import { RoomMemberList } from "../components/RoomMemberList";
 import { SessionExpiredState } from "../components/SessionExpiredState";
 import { useToast } from "../components/ToastProvider";
@@ -265,6 +266,8 @@ export function RoomDetailsPage() {
           )}
         </section>
       )}
+
+      {room.isMember && <RoomChat roomId={room._id} />}
 
       {room.isMember && (
         <section className="flex flex-col gap-5 rounded-3xl border border-coral/15 bg-white p-5 shadow-card sm:flex-row sm:items-center sm:justify-between sm:p-6">

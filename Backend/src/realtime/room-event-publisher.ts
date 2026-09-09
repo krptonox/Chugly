@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Server } from "socket.io";
 
 import type { IRoom } from "../models/room.model.js";
+import type { IRoomMessage } from "../models/roomChat.model.js";
 import type { IRoomMember } from "../types/room.types.js";
 
 const ROOM_CHANNEL_PREFIX = "room:";
@@ -13,7 +14,24 @@ export const ROOM_REALTIME_EVENTS = {
     memberRemoved: "room.member_removed",
     removedFromRoom: "room.removed_from_room",
     closed: "room.closed",
+    messageCreated: "room.message_created",
 } as const;
+
+export type RoomMessageCreatedEvent = {
+    eventId: string;
+    roomId: string;
+    occurredAt: string;
+    message: {
+        _id: string;
+        roomId: string;
+        senderId: string;
+        displayName: string;
+        content: string;
+        status: "sent" | "deleted";
+        createdAt: string;
+        updatedAt: string;
+    };
+};
 
 type AnonymousMemberPayload = {
     membershipId: string;
@@ -146,6 +164,35 @@ export const configureRoomEventPublisher = (
     server: Server | undefined
 ): void => {
     realtimeServer = server;
+};
+
+export const publishRoomMessage = (message: IRoomMessage): void => {
+    const roomId = message.roomId.toString();
+
+    safelyPublish(
+        ROOM_REALTIME_EVENTS.messageCreated,
+        (server) => {
+            const createdAt = message.createdAt.toISOString();
+            const updatedAt = message.updatedAt.toISOString();
+            const payload: RoomMessageCreatedEvent = {
+                ...getEventMetadata(roomId),
+                message: {
+                    _id: message._id.toString(),
+                    roomId,
+                    senderId: message.senderId.toString(),
+                    displayName: message.displayName,
+                    content: message.content,
+                    status: message.status,
+                    createdAt,
+                    updatedAt,
+                },
+            };
+
+            server
+                .to(getRoomChannel(roomId))
+                .emit(ROOM_REALTIME_EVENTS.messageCreated, payload);
+        }
+    );
 };
 
 export const publishRoomMemberJoined = (
